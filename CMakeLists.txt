@@ -1,0 +1,6 @@
+cmake_minimum_required(VERSION 2.8)
+project( vis_findcontoursAlgo )
+find_package( OpenCV REQUIRED )
+include_directories( ${OpenCV_INCLUDE_DIRS} )
+add_executable( vis_findcontours vis_findcontours.cpp )
+target_link_libraries( vis_findcontours ${OpenCV_LIBS} )
