@@ -82,20 +82,20 @@ cv::Mat findcontours(cv::Mat bin_input)
     for (int j = 0; j < num_cols; j++)
     {
       // cout << "working on pixel coord "<< i << ", " << j << endl; 
-      f_ij = bin_input.at<uchar>(i,j);
+      f_ij = bin_input.at<int>(i,j);
       if(f_ij != 0)
       {
         cout << "working on pixel coord "<< i << ", " << j << endl; 
 
         // TODO make safe checks in case borders are touching the image frame 
-        if( (f_ij == 1) && (bin_input.at<uchar>(i,j-1) == 0))  // 1(a) outer border
+        if( (f_ij == 1) && (bin_input.at<int>(i,j-1) == 0))  // 1(a) outer border
         {
           NBD++;
           i2 = i;
           j2 = j-1;
           is_detect_border = true;
         }
-        else if( (f_ij >= 1) && (bin_input.at<uchar>(i,j+1) == 0 ))  // 1(b) hole border
+        else if( (f_ij >= 1) && (bin_input.at<int>(i,j+1) == 0 ))  // 1(b) hole border
         {
           NBD++;
           i2 = i;
@@ -121,6 +121,10 @@ cv::Mat findcontours(cv::Mat bin_input)
           // look around clockwise
           tie(i1, j1) = lookCW(bin_input, i, j, i2, j2);
           cout << i1 <<", " << j1 << endl;
+          if( (i1 < 0) || (j1 < 0))  // non-zero element not found
+          {
+
+          }
 
 
 
