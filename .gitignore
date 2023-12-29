@@ -192,3 +192,7 @@ cython_debug/
 *.exe
 *.out
 *.app
+
+
+# linux 
+*.swp
