@@ -20,7 +20,7 @@ std::tuple<int, int> lookCW(
 
   cout << "r: " << start_r << "; c: " << start_c << endl; 
   cv::Mat pivot_D8 = img(cv::Rect(pivot_c-1, pivot_r-1, 3, 3));  // TODO safe indexing
-  cout << pivot_D8 << endl;
+  // cout << pivot_D8 << endl;
 
   // TODO double is really not necessary for this
   double CW_i_double[3][3] = {
@@ -54,8 +54,8 @@ std::tuple<int, int> lookCW(
 
   if(!is_found)
   {
-      found_r = -1;
-      found_c = -1;
+    found_r = -1;
+    found_c = -1;
   }
   return make_tuple(found_r, found_c);
 }
@@ -120,14 +120,21 @@ cv::Mat findcontours(cv::Mat bin_input)
           // 3.1
           // look around clockwise
           tie(i1, j1) = lookCW(bin_input, i, j, i2, j2);
-          cout << i1 <<", " << j1 << endl;
-          if( (i1 < 0) || (j1 < 0))  // non-zero element not found
+          // cout << i1 <<", " << j1 << endl;
+          if(( (i1 < 0) || (j1 < 0)))  // non-zero element not found
           {
-
+            bin_input.at<int>(i, j) = -1*NBD;
           }
+          else
+          {
+            // 3.2 
+            i2 = i1;
+            j2 = j1;
+            i3 = i;
+            j3 = j;
 
-
-
+            // 3.3
+          }
         }
 
         // 4
