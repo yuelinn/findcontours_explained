@@ -8,7 +8,7 @@ Some words explaining the gif:
 + We look through the image sequencially using raster scan and update the pixel values to with the unique border id. 
 + The binary image is shown in grey. The pixel in focus is shown as purple; light purple during raster scan, and darker purple during border following.
 + The yellow pixel is the pixel is where we start to 'look'. The direction of 'looking' is given by the algorithm. 
-+ The green pixel is the pixel being 'looked' at.
++ The green pixel is the pixel being 'looked' at when searching for the next pixel.
 
 
 TODO:
