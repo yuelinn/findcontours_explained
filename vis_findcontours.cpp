@@ -6,6 +6,69 @@
 
 using namespace std;
 
+
+// TODO this is only for D8 maybe do one which works for D4 too?
+std::tuple<int, int> lookCCW(
+    cv::Mat img, 
+    int pivot_r, 
+    int pivot_c, 
+    int start_r, 
+    int start_c,
+    cv::Mat visited_mat
+    ) 
+{
+  int found_r =-1, found_c = -1;
+  bool is_found = false;
+
+  cout << "r: " << start_r << "; c: " << start_c << endl; 
+  cv::Mat pivot_D8 = img(cv::Rect(pivot_c-1, pivot_r-1, 3, 3));  // TODO safe indexing
+
+  int CCW_i_int[3][3] = {
+    { 1, 0,  0}, 
+    { 1, 0, -1}, 
+    { 0, 0, -1}};
+  int CCW_j_int[3][3] = {
+    { 0, -1, -1}, 
+    { 0,  0,  0}, 
+    { 1,  1,  0}};
+
+  int d_i, d_j;
+
+  for(int tick = 0; tick < 8; ++tick)
+  {
+    // position relative to (pivot_r-1, pivot_c -1)
+    d_i = start_r - pivot_r + 1; 
+    d_j = start_c - pivot_c + 1;
+
+    // move according to matrix
+    start_r = CCW_i_int[d_i][d_j] + start_r;
+    start_c = CCW_j_int[d_i][d_j] + start_c;
+
+    if(img.at<int>(start_r, start_c) != 0)
+    {
+      found_r = start_r;
+      found_c = start_c;
+      is_found = true;
+      break;
+    }
+
+    // mark cell as visited if not found
+    visited_mat.at<int>(start_r, start_c) = 1;
+
+    // cout << "r: " << start_r << "; c: " << start_c << endl; 
+  }
+
+  if(!is_found)
+  {
+    found_r = -1;
+    found_c = -1;
+  }
+
+  return make_tuple(found_r, found_c);
+}
+
+
+
 // TODO this is only for D8 maybe do one which works for D4 too?
 std::tuple<int, int> lookCW(
     cv::Mat img, 
@@ -18,7 +81,7 @@ std::tuple<int, int> lookCW(
   int found_r =-1, found_c = -1;
   bool is_found = false;
 
-  cout << "r: " << start_r << "; c: " << start_c << endl; 
+  // cout << "r: " << start_r << "; c: " << start_c << endl; 
   cv::Mat pivot_D8 = img(cv::Rect(pivot_c-1, pivot_r-1, 3, 3));  // TODO safe indexing
   // cout << pivot_D8 << endl;
 
@@ -134,6 +197,37 @@ cv::Mat findcontours(cv::Mat bin_input)
             j3 = j;
 
             // 3.3
+            while(true)
+            {
+              cv::Mat visited_mat;
+              visited_mat = cv::Mat::zeros(bin_input.rows, bin_input.cols, bin_input.type());
+              tie(i4, j4) = lookCCW(bin_input, i3, j3, i2, j2, visited_mat);
+              cout << "visited squares mat= " << endl << visited_mat << endl << endl;
+
+              // 3.4 
+              // TODO check safe indexing
+              if(visited_mat.at<int>(i3, j3+1) == 1)  // 3.4(a)
+              {
+                bin_input.at<int>(i3, j3) = -1 * NBD;
+              }
+              else if(bin_input.at<int>(i3, j3) == 1)
+              {
+                bin_input.at<int>(i3, j3) = NBD;
+              }
+
+              // 3.5 check if at starting point or not
+              if((i4 == i) && (j4 ==j) && (i3 == i1) && (j3 == j1))
+              {
+                break;
+              }
+              else
+              {
+                i2 = i3;
+                j2 = j3;
+                i3 = i4;
+                j3 = j4;
+              }
+            }
           }
         }
 
