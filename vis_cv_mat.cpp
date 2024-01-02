@@ -52,14 +52,30 @@ bool Vis_cv_mat::draw_mat(
       cv::Point top_left(min_x, min_y), bottom_right(min_x + grid_size, min_y + grid_size);
       cv::rectangle(vis_mat, top_left, bottom_right, Vis_cv_mat::grid_clr, 2);
 
+      // color pixels
+      if(bin_img.at<int>(r,c) != 0)
+      {
+        cv::rectangle(vis_mat, top_left, bottom_right, Vis_cv_mat::px_clr, -1);
+      }
+
       // highlight current pixel
       if(curr_px.x == c && curr_px.y == r)
       {
+        cv::Scalar clr;
+        if(is_raster_scan)
+        {
+          clr = Vis_cv_mat::raster_scan_clr;
+        } 
+        else
+        {
+          clr = Vis_cv_mat::highlight_clr;
+        }
+
         cv::rectangle(
             vis_mat, 
             top_left,
             bottom_right,
-            Vis_cv_mat::highlight_clr,
+            clr,
             -1
             );
       }
@@ -136,5 +152,6 @@ void Vis_cv_mat::reset_border()
 {
   start_px = cv::Point(-1,-1);
   start_pivot_px = cv::Point(-1,-1);
+  is_raster_scan = true;
   return;
 }

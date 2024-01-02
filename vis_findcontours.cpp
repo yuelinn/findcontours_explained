@@ -217,6 +217,7 @@ cv::Mat findcontours(cv::Mat bin_input, string img_vis_dir="", int vis_size=1024
 
         if(is_detect_border)
         {
+          visualiser.is_raster_scan = false;
           is_detect_border = false;
 
           cv::Point start_pt(j,i);  // x,y
