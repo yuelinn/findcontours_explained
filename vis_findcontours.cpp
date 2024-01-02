@@ -3,9 +3,9 @@
 // Algorithm 1 as described in Appendix I
 
 #include <opencv2/opencv.hpp>
+#include "vis_cv_mat.hpp"
 
 using namespace std;
-
 
 // TODO this is only for D8 maybe do one which works for D4 too?
 std::tuple<int, int> lookCCW(
@@ -14,7 +14,9 @@ std::tuple<int, int> lookCCW(
     int pivot_c, 
     int start_r, 
     int start_c,
-    cv::Mat visited_mat
+    cv::Mat visited_mat,
+    Vis_cv_mat visualiser,
+    bool is_vis=true
     ) 
 {
   int found_r =-1, found_c = -1;
@@ -34,6 +36,7 @@ std::tuple<int, int> lookCCW(
 
   int d_i, d_j;
 
+  cv::Point q_pt(start_c, start_r);  // x,y
   for(int tick = 0; tick < 8; ++tick)
   {
     // position relative to (pivot_r-1, pivot_c -1)
@@ -43,7 +46,12 @@ std::tuple<int, int> lookCCW(
     // move according to matrix
     start_r = CCW_i_int[d_i][d_j] + start_r;
     start_c = CCW_j_int[d_i][d_j] + start_c;
-
+    if(is_vis)
+    {
+      cv::Point curr_pt(pivot_c,pivot_r);  // x,y
+      cv::Point r_pt(start_c, start_r);  // x,y
+      visualiser.draw_mat(img, curr_pt, cv::Point(-2,-2), q_pt, cv::Point(-2,-2), r_pt);
+    }
     if(img.at<int>(start_r, start_c) != 0)
     {
       found_r = start_r;
@@ -75,7 +83,9 @@ std::tuple<int, int> lookCW(
     int pivot_r, 
     int pivot_c, 
     int start_r, 
-    int start_c
+    int start_c,
+    Vis_cv_mat visualiser,
+    bool is_vis=true
     ) 
 {
   int found_r =-1, found_c = -1;
@@ -104,11 +114,22 @@ std::tuple<int, int> lookCW(
     start_r = CW_i_double[d_i][d_j] + start_r;
     start_c = CW_j_double[d_i][d_j] + start_c;
 
+
+    if(is_vis)
+    {
+      // visualise
+      cv::Point curr_pt(pivot_c,pivot_r);  // x,y
+      // draw (i2,j2)
+      cv::Point q_pt(start_c, start_r);  // x,y
+      visualiser.draw_mat(img, curr_pt, cv::Point(-2,-2), q_pt);
+    }
+
     if(img.at<int>(start_r, start_c) != 0)
     {
       found_r = start_r;
       found_c = start_c;
       is_found = true;
+
       break;
     }
 
@@ -124,7 +145,7 @@ std::tuple<int, int> lookCW(
 }
 
 
-cv::Mat findcontours(cv::Mat bin_input)
+cv::Mat findcontours(cv::Mat bin_input, string img_vis_dir="", int vis_size=1024)
 {
   bin_input.convertTo(bin_input, CV_32S);  // needs to be able to hold negative integers
   // TODO check the max number of components in the image, choose datatype based on range required.
@@ -138,6 +159,18 @@ cv::Mat findcontours(cv::Mat bin_input)
   int NBD, LNBD;
   bool is_detect_border = false; // Whether or not to do border following (step 3)
   NBD = 1;
+  bool  is_vis = false;
+
+  Vis_cv_mat visualiser (img_vis_dir, vis_size);  // initialise visualiser 
+  if(img_vis_dir.length() > 0)
+  {
+    is_vis = true;
+  }
+
+  if(is_vis)
+  {
+    visualiser.draw_mat(bin_input);
+  }
 
   for (int i = 0; i < num_rows; i++)
   {
@@ -145,6 +178,13 @@ cv::Mat findcontours(cv::Mat bin_input)
     for (int j = 0; j < num_cols; j++)
     {
       // cout << "working on pixel coord "<< i << ", " << j << endl; 
+
+      if(is_vis)
+      {
+        cv::Point curr_pt(j,i);  // x,y
+        visualiser.draw_mat(bin_input, curr_pt);
+      }
+
       f_ij = bin_input.at<int>(i,j);
       if(f_ij != 0)
       {
@@ -179,11 +219,29 @@ cv::Mat findcontours(cv::Mat bin_input)
         {
           is_detect_border = false;
 
+          cv::Point start_pt(j,i);  // x,y
+          if(is_vis)
+          {
+            cv::Point curr_pt(j,i);  // x,y
+            visualiser.draw_mat(bin_input, curr_pt, start_pt);
+
+            // draw (i2,j2)
+            cv::Point q_pt(j2,i2);  // x,y
+            visualiser.draw_mat(bin_input, curr_pt, start_pt, q_pt);
+          }
+
           // 3 
           // 3.1
           // look around clockwise
-          tie(i1, j1) = lookCW(bin_input, i, j, i2, j2);
-          // cout << i1 <<", " << j1 << endl;
+          tie(i1, j1) = lookCW(bin_input, i, j, i2, j2, visualiser);
+
+          if(is_vis)
+          {
+            cv::Point curr_pt(j,i);  // x,y
+            cv::Point i1_pt(j1, i1);  // x,y
+            visualiser.draw_mat(bin_input, curr_pt, start_pt, i1_pt, i1_pt);
+          }
+
           if(( (i1 < 0) || (j1 < 0)))  // non-zero element not found
           {
             bin_input.at<int>(i, j) = -1*NBD;
@@ -199,9 +257,16 @@ cv::Mat findcontours(cv::Mat bin_input)
             // 3.3
             while(true)
             {
+              if(is_vis)
+              {
+                cv::Point curr_pt(j3,i3);  // x,y
+                cv::Point q_pt(j2, i2);  // x,y
+                visualiser.draw_mat(bin_input, curr_pt, start_pt, q_pt);
+              }
+
               cv::Mat visited_mat;
               visited_mat = cv::Mat::zeros(bin_input.rows, bin_input.cols, bin_input.type());
-              tie(i4, j4) = lookCCW(bin_input, i3, j3, i2, j2, visited_mat);
+              tie(i4, j4) = lookCCW(bin_input, i3, j3, i2, j2, visited_mat, visualiser);
               cout << "visited squares mat= " << endl << visited_mat << endl << endl;
 
               // 3.4 
@@ -236,6 +301,7 @@ cv::Mat findcontours(cv::Mat bin_input)
         {
           LNBD = f_ij;
         }
+        visualiser.reset_border();
 
         cout << "updated mat= " << endl << bin_input << endl << endl;
         cout << "NBD: " << NBD << "; LNBD: " << LNBD << endl;
@@ -250,6 +316,7 @@ cv::Mat findcontours(cv::Mat bin_input)
 int main (void)
 {
   string img_fp = "../img.png";
+  string img_vis_dir = "../vis/";
 
   cv::Mat image;
   image = cv::imread(img_fp, cv::IMREAD_GRAYSCALE);
@@ -274,7 +341,7 @@ int main (void)
   // cout << "bin img type " << bin_input.type() << endl;  // CV_8U
 
   cv::Mat output_mat;
-  output_mat = findcontours(bin_input);
+  output_mat = findcontours(bin_input, img_vis_dir);
 
   return 0;
 }
